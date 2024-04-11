@@ -19,8 +19,8 @@ hparam_file='hparams/conformer_transducer.yaml'
 
 nvidia-smi
 
-. ${scripts_root}/toolkits/speechbrain/load-modules.sh
-${scripts_root}/toolkits/speechbrain/setup-environment.sh $sb_root
+. ${scripts_root}/sb/load-modules.sh
+${scripts_root}/sb/setup-environment.sh $sb_root
 ${scripts_root}/datasets/librispeech-extract-local.sh ${librispeech_root}/*.tar.gz
 
 cd "${sb_root}/recipes/LibriSpeech/ASR/transducer"
