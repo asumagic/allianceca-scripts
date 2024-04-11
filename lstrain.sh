@@ -10,57 +10,18 @@
 
 set -ex
 
+scripts_root=$(dirname "$0")
+
 sb_root='/home/sdelang/sb'
+librispeech_root='/home/sdelang/projects/def-ravanelm/datasets/librispeech/'
 
 hparam_file='hparams/conformer_transducer.yaml'
 
 nvidia-smi
 
-module load StdEnv/2020
-
-# TODO: update to support 2023 (probably need to update the CUDA module versions)
-# cudacore no longer seems to be a thing
-#module load StdEnv/2023
-module load cuda/11.7
-module load cudacore/.11.7.0  # for numba; provides libnvvm; unsure why separate
-module load python/3.11
-
-# Create virtual environment on the local scratch
-virtualenv --no-download $SLURM_TMPDIR/env
-source $SLURM_TMPDIR/env/bin/activate
-
-# TODO: maybe the requirements.txt file simply doesn't need to be used:
-# the setup.py installs dependencies itself
-
-# For requirement files, remove package pins.
-# This is hacky, but we need to rely on whatever version the cluster has available
-function reqs_override_pins() {
-    sed -E -e 's/(==|^SoundFile).*//' $1 >$2
-    diff $1 $2 || true
-}
-reqs_override_pins $sb_root/requirements.txt $SLURM_TMPDIR/requirements.txt
-reqs_override_pins $sb_root/lint-requirements.txt $SLURM_TMPDIR/lint-requirements.txt
-
-# Install dependencies
-pip install --no-index --upgrade pip
-pip install --no-index -r $SLURM_TMPDIR/requirements.txt
-pip install --no-index numba
-pip install --no-index --no-dependencies --editable $sb_root
-pip list
-
-cd $SLURM_TMPDIR
-for f in ~/projects/def-ravanelm/datasets/librispeech/*.tar.gz; do
-	tar -xf $f # &   # will extract into /LibriSpeech
-done
-
-#wait < <(jobs -p)
-
-ls -l LibriSpeech
-
-# hacky, but making sure we have a consistent path to the dataset even when
-# extracted to a local scratch
-unlink ~/LibriSpeech-symlink || true
-ln -s $SLURM_TMPDIR/ ~/LibriSpeech-symlink || true
+. ${scripts_root}/toolkits/speechbrain/load-modules.sh
+${scripts_root}/toolkits/speechbrain/setup-environment.sh $sb_root
+${scripts_root}/datasets/librispeech-extract-local.sh ${librispeech_root}/*.tar.gz
 
 cd "${sb_root}/recipes/LibriSpeech/ASR/transducer"
 
